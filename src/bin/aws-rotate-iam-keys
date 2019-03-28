@@ -81,7 +81,7 @@ INACTIVE_KEY_ID=$(aws iam list-access-keys --output json --profile $FIRST_PROFIL
 if [[ "$INACTIVE_KEY_ID" != "" ]]; then
   # Remove inactive key
   echo "Removing inactive access key $INACTIVE_KEY_ID"
-  aws iam delete-access-key --access-key-id $INACTIVE_KEY_ID --output json
+  aws iam delete-access-key --access-key-id $INACTIVE_KEY_ID --output json --profile $FIRST_PROFILE
 fi
 
 CURRENT_KEY_ID=$(aws iam list-access-keys --output json --profile $FIRST_PROFILE | jq '.AccessKeyMetadata[0].AccessKeyId' | tr -d '"' || exit 1)
