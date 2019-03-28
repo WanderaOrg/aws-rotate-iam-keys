@@ -77,6 +77,13 @@ set -f; unset IFS             # avoid globbing (expansion of *).
 PROFILES_ARR=(${PROFILES//,/ })
 FIRST_PROFILE=${PROFILES_ARR[0]}
 
+INACTIVE_KEY_ID=$(aws iam list-access-keys --output json --profile $FIRST_PROFILE | jq '.AccessKeyMetadata[] | select(.Status == "Inactive") | .AccessKeyId' | tr -d '"')
+if [[ "$INACTIVE_KEY_ID" != "" ]]; then
+  # Remove inactive key
+  echo "Removing inactive access key $INACTIVE_KEY_ID"
+  aws iam delete-access-key --access-key-id $INACTIVE_KEY_ID --output json
+fi
+
 CURRENT_KEY_ID=$(aws iam list-access-keys --output json --profile $FIRST_PROFILE | jq '.AccessKeyMetadata[0].AccessKeyId' | tr -d '"' || exit 1)
 
 if [[ "$CURRENT_KEY_ID" != "" ]]; then
@@ -86,7 +93,7 @@ if [[ "$CURRENT_KEY_ID" != "" ]]; then
   ACCESS_KEY=$(echo $RESPONSE | jq '.AccessKeyId' | tr -d '"')
   SECRET=$(echo $RESPONSE | jq '.SecretAccessKey' | tr -d '"')
   if [[ "$ACCESS_KEY" != "" && "$SECRET" != "" ]]; then
-    aws iam delete-access-key --access-key-id $CURRENT_KEY_ID --profile ${PROFILES_ARR[0]}
+    aws iam update-access-key --access-key-id $CURRENT_KEY_ID --status Inactive --profile ${PROFILES_ARR[0]}
 
     # Rotate the keys in the credentials file for all profiles
     for i in "${!PROFILES_ARR[@]}"
